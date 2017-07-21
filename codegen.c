@@ -180,10 +180,9 @@ codegen_exp (struct AST *ast)
  */
     } else if (!strcmp (ast->ast_type, "AST_expression_assign")) {
         // a = b
-        //emit_code (ast, "\tpushl   %%  \n");   //TODO push b
-        codegen_exp(ast->child[0]); //push b
-        codegen_exp(ast->child[1]); //push a
-        //emit_code (ast, "\tpushl   %%  \n");   //TODO push a
+        //右辺値と左辺値で大域変数に$をつけるか否かを決める必要がある、どうやる？
+        codegen_exp(ast->child[1]); //push b
+        codegen_exp(ast->child[0]); //push a
         emit_code (ast, "\tpopl    %%eax\n");  // %eax <- a
         emit_code (ast, "\tmovl    0(%%esp), %%ecx\n");  // %ecx <- b
         emit_code (ast, "\tmovl    %%ecx, 0(%%eax)\n");  // a <- b
