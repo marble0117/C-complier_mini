@@ -178,6 +178,18 @@ codegen_exp (struct AST *ast)
 /*
     } else if (.....) {  // 他の expression の場合のコードをここに追加する
  */
+    } else if (!strcmp (ast->ast_type, "AST_expression_assign")) {
+        // a = b
+        //emit_code (ast, "\tpushl   %%  \n");   //TODO push b
+        codegen_exp(ast->child[0]); //push b
+        codegen_exp(ast->child[1]); //push a
+        //emit_code (ast, "\tpushl   %%  \n");   //TODO push a
+        emit_code (ast, "\tpopl    %%eax\n");  // %eax <- a
+        emit_code (ast, "\tmovl    0(%%esp), %%ecx\n");  // %ecx <- b
+        emit_code (ast, "\tmovl    %%ecx, 0(%%eax)\n");  // a <- b
+    } else if (!strcmp (ast->ast_type, "AST_expression_add")) {
+    } else if (!strcmp (ast->ast_type, "AST_expression_sub")) {
+    } else if (!strcmp (ast->ast_type, "AST_expression_less")) {
     } else {
         fprintf (stderr, "ast_type: %s\n", ast->ast_type);
         assert (0);
@@ -201,6 +213,11 @@ codegen_stmt (struct AST *ast_stmt)
 /*
     } else if (.....) {  // 他の statement の場合のコードをここに追加する
  */
+    } else if (!strcmp (ast_stmt->ast_type, "AST_statement_if")) {
+    } else if (!strcmp (ast_stmt->ast_type, "AST_statement_ifelse")) {
+    } else if (!strcmp (ast_stmt->ast_type, "AST_statement_while")) {
+    } else if (!strcmp (ast_stmt->ast_type, "AST_statement_goto")) {
+    } else if (!strcmp (ast_stmt->ast_type, "AST_statement_return")) {
     } else {
         assert (0);
     }
@@ -305,9 +322,9 @@ codegen (void)
             assert (0);
 
         if (!strcmp (ast_ext->ast_type, "AST_external_declaration_func"))
-	    codegen_func (ast_ext->child [0]);
+	       codegen_func (ast_ext->child [0]);
         else if (!strcmp (ast_ext->ast_type, "AST_external_declaration_dec"))
-	    codegen_dec (ast_ext->child [0]);
+	       codegen_dec (ast_ext->child [0]);
         else 
             assert (0);
 
