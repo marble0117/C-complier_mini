@@ -22,6 +22,8 @@
 static char *func_name;
 static int   total_local_size;
 
+static int label_count = 0;
+
 static void emit_code (struct AST *ast, char *fmt, ...);
 static void codegen_begin_block (struct AST *ast);
 static void codegen_end_block (void);
@@ -168,27 +170,45 @@ codegen_exp (struct AST *ast)
     } else if (!strcmp (ast->ast_type, "AST_expression_string")) {
         struct String *string = string_lookup (ast->u.id);
         assert (string != NULL);
-	emit_code (ast, "\tpushl   $%s.%s \t# \"%s\"\n",
+	    emit_code (ast, "\tpushl   $%s.%s \t# \"%s\"\n",
                    LABEL_PREFIX, string->label, string->data);
     } else if (!strcmp (ast->ast_type, "AST_expression_id")) {
-	codegen_exp_id (ast);
+	    codegen_exp_id (ast);
     } else if (   !strcmp (ast->ast_type, "AST_expression_funcall1")
                || !strcmp (ast->ast_type, "AST_expression_funcall2")) {
-	codegen_exp_funcall (ast);
+	    codegen_exp_funcall (ast);
 /*
     } else if (.....) {  // 他の expression の場合のコードをここに追加する
  */
     } else if (!strcmp (ast->ast_type, "AST_expression_assign")) {
         // a = b
         //右辺値と左辺値で大域変数に$をつけるか否かを決める必要がある、どうやる？
-        codegen_exp(ast->child[1]); //push b
-        codegen_exp(ast->child[0]); //push a
+        codegen_exp (ast->child[1]); //push b
+        codegen_exp (ast->child[0]); //push a
         emit_code (ast, "\tpopl    %%eax\n");  // %eax <- a
         emit_code (ast, "\tmovl    0(%%esp), %%ecx\n");  // %ecx <- b
         emit_code (ast, "\tmovl    %%ecx, 0(%%eax)\n");  // a <- b
     } else if (!strcmp (ast->ast_type, "AST_expression_add")) {
+        // a + b
+        codegen_exp (ast->child[0]); //push a
+        codegen_exp (ast->child[1]); //push b
+        emit_code (ast, "\tpopl    %%ecx\n");
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\taddl    %%ecx, %%eax\n");
+        emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_sub")) {
+        codegen_exp (ast->child[0]); //push a
+        codegen_exp (ast->child[1]); //push b
+        emit_code (ast, "\tpopl    %%ecx\n");
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tsubl    %%ecx, %%eax\n");
+        emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_less")) {
+        codegen_exp (ast->child[0]);
+        codegen_exp (ast->child[1]);
+        emit_code (ast, "\tpopl    %%ecx\n");
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tcmpl    %%ecx, %%eax\n");
     } else {
         fprintf (stderr, "ast_type: %s\n", ast->ast_type);
         assert (0);
@@ -215,6 +235,17 @@ codegen_stmt (struct AST *ast_stmt)
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_if")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_ifelse")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_while")) {
+        emit_code(ast_stmt, "L%d:\n", label_count);
+        codegen_exp(ast_stmt->child[0]);
+        if (!strcmp (ast_stmt->child[0]->ast_type, "AST_expression_less")){
+            //
+            emit_code(ast_stmt, "\tjge     L%d\n", (label_count+1));
+        } else {
+            assert(0);
+        }
+        codegen_stmt(ast_stmt->child[1]);
+        emit_code(ast_stmt, "\tjmp     L%d\n", label_count++);
+        emit_code(ast_stmt, "L%d:\n", label_count++);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_goto")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_return")) {
     } else {
