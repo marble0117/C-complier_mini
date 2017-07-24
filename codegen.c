@@ -288,7 +288,7 @@ codegen_stmt (struct AST *ast_stmt)
     if (!strcmp (ast_stmt->ast_type, "AST_statement_exp")) {
     	if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_single")) {
     	    codegen_exp (ast_stmt->child [0]->child [0]);
-                emit_code (ast_stmt, "\taddl    $4, %%esp\n");
+            emit_code (ast_stmt, "\taddl    $4, %%esp\n");
     	} else if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_null")) {
             /* nothing to do */
         } else {
@@ -329,7 +329,6 @@ codegen_stmt (struct AST *ast_stmt)
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_return")) {
         if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_single")) {
             codegen_exp (ast_stmt->child [0]->child [0]);
-                emit_code (ast_stmt, "\taddl    $4, %%esp\n");
         } else if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_null")) {
             /* nothing to do */
         } else {
