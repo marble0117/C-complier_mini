@@ -23,6 +23,7 @@ static char *func_name;
 static int   total_local_size;
 
 static int label_count = 0;
+static int exp_id_mem = 0;  //右辺値:
 
 static void emit_code (struct AST *ast, char *fmt, ...);
 static void codegen_begin_block (struct AST *ast);
@@ -110,7 +111,7 @@ codegen_exp_id (struct AST *ast)
 	break;
     case NS_GLOBAL:
         // char型には非対応
-        if (sym->type->kind == TYPE_KIND_FUNCTION) {
+        if (sym->type->kind == TYPE_KIND_FUNCTION || exp_id_mem) {
             emit_code (ast, "\tpushl   $_%s\n", sym->name);
         } else {
             emit_code (ast, "\tpushl   _%s\n", sym->name);
@@ -182,11 +183,11 @@ codegen_exp (struct AST *ast)
  */
     } else if (!strcmp (ast->ast_type, "AST_expression_assign")) {
         // a = b
-        //右辺値と左辺値で大域変数に$をつけるか否かを決める必要がある、どうやる？
-        codegen_exp (ast->child[1]);
-        struct Symbol *sym = sym_lookup (ast->child[0]->child [0]->u.id);
-        assert (sym != NULL);
-        emit_code (ast->child[0], "\tpushl   $_%s\n", sym->name); //push a
+        exp_id_mem = 0;
+        codegen_exp (ast->child[1]);    //right
+        exp_id_mem = 1;
+        codegen_exp (ast->child[0]);    //left
+        exp_id_mem = 0;
         emit_code (ast, "\tpopl    %%eax\n");  // %eax <- a
         emit_code (ast, "\tmovl    0(%%esp), %%ecx\n");  // %ecx <- b
         emit_code (ast, "\tmovl    %%ecx, 0(%%eax)\n");  // a <- b
