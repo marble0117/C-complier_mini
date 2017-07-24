@@ -198,6 +198,8 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "\taddl    %%ecx, %%eax\n");
         emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_sub")) {
+    } else if (!strcmp (ast->ast_type, "AST_expression_mul")) {
+    } else if (!strcmp (ast->ast_type, "AST_expression_div")) {
         codegen_exp (ast->child[0]); //push a
         codegen_exp (ast->child[1]); //push b
         emit_code (ast, "\tpopl    %%ecx\n");
@@ -210,6 +212,9 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "\tpopl    %%ecx\n");
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tcmpl    %%ecx, %%eax\n");
+    } else if (!strcmp (ast->ast_type, "AST_expression_eq")) {
+    } else if (!strcmp (ast->ast_type, "AST_expression_lor")) {
+    } else if (!strcmp (ast->ast_type, "AST_expression_land")) {
     } else {
         fprintf (stderr, "ast_type: %s\n", ast->ast_type);
         assert (0);
