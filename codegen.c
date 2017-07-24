@@ -286,10 +286,10 @@ static void
 codegen_stmt (struct AST *ast_stmt)
 {
     if (!strcmp (ast_stmt->ast_type, "AST_statement_exp")) {
-	if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_single")) {
-	    codegen_exp (ast_stmt->child [0]->child [0]);
-            emit_code (ast_stmt, "\taddl    $4, %%esp\n");
-	} else if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_null")) {
+    	if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_single")) {
+    	    codegen_exp (ast_stmt->child [0]->child [0]);
+                emit_code (ast_stmt, "\taddl    $4, %%esp\n");
+    	} else if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_null")) {
             /* nothing to do */
         } else {
             assert (0);
@@ -301,22 +301,25 @@ codegen_stmt (struct AST *ast_stmt)
  */
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_if")) {
         codegen_exp (ast_stmt->child[0]);     //expression
+        emit_code (ast_stmt, "\tpopl    %%eax\n");
         emit_code (ast_stmt, "\tcmpl    $0, %%eax\n");
         emit_code (ast_stmt, "\tje      L%d\n", label_count);
         codegen_stmt(ast_stmt->child[1]);     //statement
         emit_code (ast_stmt, "L%d:\n", label_count++);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_ifelse")) {
         codegen_exp (ast_stmt->child[0]);     //expression
+        emit_code (ast_stmt, "\tpopl    %%eax\n");
         emit_code (ast_stmt, "\tcmpl    $0, %%eax\n");
         emit_code (ast_stmt, "\tje      L%d\n", label_count);
         codegen_stmt (ast_stmt->child[1]);     //statement_1
         emit_code (ast_stmt, "\tjmp     L%d\n", label_count+1);
         emit_code (ast_stmt, "L%d:\n", label_count++);
         codegen_stmt (ast_stmt->child[2]);     //statement_2
-        emit_code (ast_stmt, "L%d:\n", label_count);
+        emit_code (ast_stmt, "L%d:\n", label_count++);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_while")) {
         emit_code (ast_stmt, "L%d:\n", label_count);
         codegen_exp (ast_stmt->child[0]);      //expression
+        emit_code (ast_stmt, "\tpopl    %%eax\n");
         emit_code (ast_stmt, "\tcmpl    $0, %%eax\n");
         emit_code (ast_stmt, "\tje      L%d\n", (label_count+1));
         codegen_stmt (ast_stmt->child[1]);     //statement
@@ -324,6 +327,14 @@ codegen_stmt (struct AST *ast_stmt)
         emit_code (ast_stmt, "L%d:\n", label_count++);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_goto")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_return")) {
+        if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_single")) {
+            codegen_exp (ast_stmt->child [0]->child [0]);
+                emit_code (ast_stmt, "\taddl    $4, %%esp\n");
+        } else if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_null")) {
+            /* nothing to do */
+        } else {
+            assert (0);
+        }
         emit_code (ast_stmt, "\tpopl    %%eax\n");
         emit_code (ast_stmt, "\tjmp     %s.RE.%s\n", LABEL_PREFIX,func_name);
     } else {
