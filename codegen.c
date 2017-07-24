@@ -225,6 +225,9 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "\tpopl    %%ecx\n");
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tcmpl    %%ecx, %%eax\n");
+        emit_code (ast, "\tsetl    %%al\n");
+        emit_code (ast, "\tmovzbl  %%al, %%eax\n");
+        emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_eq")) {
     } else if (!strcmp (ast->ast_type, "AST_expression_lor")) {
     } else if (!strcmp (ast->ast_type, "AST_expression_land")) {
@@ -252,19 +255,16 @@ codegen_stmt (struct AST *ast_stmt)
     } else if (.....) {  // 他の statement の場合のコードをここに追加する
  */
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_if")) {
+
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_ifelse")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_while")) {
         emit_code(ast_stmt, "L%d:\n", label_count);
         codegen_exp(ast_stmt->child[0]);
-        if (!strcmp (ast_stmt->child[0]->ast_type, "AST_expression_less")){
-            //
-            emit_code(ast_stmt, "\tjge     L%d\n", (label_count+1));
-        } else {
-            assert(0);
-        }
+        emit_code (ast_stmt, "\tcmpl    $0, %%eax\n");
+        emit_code (ast_stmt, "\tje      L%d\n", (label_count+1));
         codegen_stmt(ast_stmt->child[1]);
-        emit_code(ast_stmt, "\tjmp     L%d\n", label_count++);
-        emit_code(ast_stmt, "L%d:\n", label_count++);
+        emit_code (ast_stmt, "\tjmp     L%d\n", label_count++);
+        emit_code (ast_stmt, "L%d:\n", label_count++);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_goto")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_return")) {
     } else {
