@@ -238,7 +238,37 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "\tmovzbl  %%al, %%eax\n");
         emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_lor")) {
+        codegen_exp (ast->child[0]);     //expression1
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tcmpl    $0, %%eax\n");
+        emit_code (ast, "\tjne     L%d\n", label_count);    //if 1(true) jmp true
+        codegen_exp (ast->child[1]);     //expression2
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tcmpl    $0, %%eax\n");
+        emit_code (ast, "\tjne     L%d\n", label_count);    //if 1(true) jmp true
+        emit_code (ast, "\tjmp     L%d\n", label_count+1);  //else jmp false
+        emit_code (ast, "L%d:\n", label_count++);  //true
+        emit_code (ast, "\tpushl   $1\n");
+        emit_code (ast, "\tjmp     L%d\n", label_count+1);
+        emit_code (ast, "L%d:\n", label_count++);  //false
+        emit_code (ast, "\tpushl   $0\n");
+        emit_code (ast, "L%d:\n", label_count++);
     } else if (!strcmp (ast->ast_type, "AST_expression_land")) {
+        codegen_exp (ast->child[0]);     //expression1
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tcmpl    $0, %%eax\n");
+        emit_code (ast, "\tje      L%d\n", label_count);    //if 0(false) jmp false
+        codegen_exp (ast->child[1]);     //expression2
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tcmpl    $0, %%eax\n");
+        emit_code (ast, "\tje      L%d\n", label_count);    //if 0(false) jmp true
+        emit_code (ast, "\tjmp     L%d\n", label_count+1);  //else jmp true
+        emit_code (ast, "L%d:\n", label_count++);  //false
+        emit_code (ast, "\tpushl   $0\n");
+        emit_code (ast, "\tjmp     L%d\n", label_count+1);
+        emit_code (ast, "L%d:\n", label_count++);  //true
+        emit_code (ast, "\tpushl   $1\n");
+        emit_code (ast, "L%d:\n", label_count++);
     } else {
         fprintf (stderr, "ast_type: %s\n", ast->ast_type);
         assert (0);
