@@ -229,6 +229,14 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "\tmovzbl  %%al, %%eax\n");
         emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_eq")) {
+        codegen_exp (ast->child[0]);
+        codegen_exp (ast->child[1]);
+        emit_code (ast, "\tpopl    %%ecx\n");
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tcmpl    %%ecx, %%eax\n");
+        emit_code (ast, "\tsete    %%al\n");
+        emit_code (ast, "\tmovzbl  %%al, %%eax\n");
+        emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_lor")) {
     } else if (!strcmp (ast->ast_type, "AST_expression_land")) {
     } else {
@@ -279,6 +287,8 @@ codegen_stmt (struct AST *ast_stmt)
         emit_code (ast_stmt, "L%d:\n", label_count++);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_goto")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_return")) {
+        emit_code (ast_stmt, "\tpopl    %%eax\n");
+        emit_code (ast_stmt, "\tjmp     %s.RE.%s\n", LABEL_PREFIX,func_name);
     } else {
         assert (0);
     }
