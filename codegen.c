@@ -198,13 +198,26 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "\taddl    %%ecx, %%eax\n");
         emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_sub")) {
-    } else if (!strcmp (ast->ast_type, "AST_expression_mul")) {
-    } else if (!strcmp (ast->ast_type, "AST_expression_div")) {
         codegen_exp (ast->child[0]); //push a
         codegen_exp (ast->child[1]); //push b
         emit_code (ast, "\tpopl    %%ecx\n");
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tsubl    %%ecx, %%eax\n");
+        emit_code (ast, "\tpushl   %%eax\n");
+    } else if (!strcmp (ast->ast_type, "AST_expression_mul")) {
+        codegen_exp (ast->child[0]); //push a
+        codegen_exp (ast->child[1]); //push b
+        emit_code (ast, "\tpopl    %%ecx\n");
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\timull   %%ecx, %%eax\n");
+        emit_code (ast, "\tpushl   %%eax\n");
+    } else if (!strcmp (ast->ast_type, "AST_expression_div")) {
+        codegen_exp (ast->child[0]); //push a
+        codegen_exp (ast->child[1]); //push b
+        emit_code (ast, "\tpopl    %%ecx\n");
+        emit_code (ast, "\tpopl    %%eax\n");
+        emit_code (ast, "\tcltd\n");
+        emit_code (ast, "\tidivl    %%ecx\n");
         emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_less")) {
         codegen_exp (ast->child[0]);
