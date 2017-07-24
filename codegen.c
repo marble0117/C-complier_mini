@@ -106,8 +106,14 @@ codegen_exp_id (struct AST *ast)
             assert (0);
 
         // char型には非対応
-        emit_code (ast, "\tpushl   %d(%%ebp) \t# %s, %d\n",
-                   offset, sym->name, sym->offset);
+        if(exp_id_mem){
+        	emit_code (ast, "\tleal    %d(%%ebp), %%eax \t# %s, %d\n",
+            	       offset, sym->name, sym->offset);
+        	emit_code (ast, "\tpushl   %%eax\n");
+        }else{
+        	emit_code (ast, "\tpushl   %d(%%ebp) \t# %s, %d\n",
+            	       offset, sym->name, sym->offset);
+		}
 	break;
     case NS_GLOBAL:
         // char型には非対応
