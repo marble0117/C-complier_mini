@@ -288,7 +288,7 @@ codegen_exp (struct AST *ast)
     			codegen_exp (ast->child[1]);
     			is_exp_id_left = 1;
     		}
-    	} else if (!strcmp (ast->ast_type, "AST_unary_operator_address")){
+    	} else if (!strcmp (ast->child[0]->ast_type, "AST_unary_operator_address")){
     		is_exp_id_left = 1;
     		codegen_exp (ast->child[1]);
     		is_exp_id_left = 0;
