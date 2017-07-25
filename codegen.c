@@ -212,6 +212,11 @@ codegen_exp (struct AST *ast)
     } else if (!strcmp (ast->ast_type, "AST_expression_sub")) {
         codegen_exp (ast->child[0]); //push a
         codegen_exp (ast->child[1]); //push b
+        if (ast->child[0]->type->kind == TYPE_KIND_POINTER) {    //左辺値がポインタ
+            emit_code (ast, "\tpopl    %%eax\n");
+            emit_code (ast, "\timull   $4, %%eax\n");
+            emit_code (ast, "\tpushl   %%eax\n");
+        }
         emit_code (ast, "\tpopl    %%ecx\n");
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tsubl    %%ecx, %%eax\n");
