@@ -293,6 +293,9 @@ codegen_exp (struct AST *ast)
     		codegen_exp (ast->child[1]);
     		is_exp_id_left = 0;
     	}
+
+    } else if (!strcmp (ast->ast_type, "AST_expression_paren")) {
+    	codegen_exp (ast->child[0]);
     } else {
         fprintf (stderr, "ast_type: %s\n", ast->ast_type);
         assert (0);
