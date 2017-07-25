@@ -23,7 +23,7 @@ static char *func_name;
 static int   total_local_size;
 
 static int label_count = 0;
-static int exp_id_mem = 0;  //右辺値:
+static int is_exp_id_left = 0;  //右辺値:
 
 static void emit_code (struct AST *ast, char *fmt, ...);
 static void codegen_begin_block (struct AST *ast);
@@ -106,7 +106,7 @@ codegen_exp_id (struct AST *ast)
             assert (0);
 
         // char型には非対応
-        if(exp_id_mem){
+        if(is_exp_id_left){
         	emit_code (ast, "\tleal    %d(%%ebp), %%eax \t# %s, %d\n",
             	       offset, sym->name, sym->offset);
         	emit_code (ast, "\tpushl   %%eax\n");
@@ -117,7 +117,7 @@ codegen_exp_id (struct AST *ast)
 	break;
     case NS_GLOBAL:
         // char型には非対応
-        if (sym->type->kind == TYPE_KIND_FUNCTION || exp_id_mem) {
+        if (sym->type->kind == TYPE_KIND_FUNCTION || is_exp_id_left) {
             emit_code (ast, "\tpushl   $_%s\n", sym->name);
         } else {
             emit_code (ast, "\tpushl   _%s\n", sym->name);
@@ -173,7 +173,7 @@ static void
 codegen_exp (struct AST *ast)
 {
     if (!strcmp (ast->ast_type, "AST_expression_int")) {
-	emit_code (ast, "\tpushl   $%d\n", ast->u.int_val);
+		emit_code (ast, "\tpushl   $%d\n", ast->u.int_val);
     } else if (!strcmp (ast->ast_type, "AST_expression_string")) {
         struct String *string = string_lookup (ast->u.id);
         assert (string != NULL);
@@ -189,11 +189,11 @@ codegen_exp (struct AST *ast)
  */
     } else if (!strcmp (ast->ast_type, "AST_expression_assign")) {
         // a = b
-        exp_id_mem = 0;
+        is_exp_id_left = 0;
         codegen_exp (ast->child[1]);    //right
-        exp_id_mem = 1;
+        is_exp_id_left = 1;
         codegen_exp (ast->child[0]);    //left
-        exp_id_mem = 0;
+        is_exp_id_left = 0;
         emit_code (ast, "\tpopl    %%eax\n");  // %eax <- a
         emit_code (ast, "\tmovl    0(%%esp), %%ecx\n");  // %ecx <- b
         emit_code (ast, "\tmovl    %%ecx, 0(%%eax)\n");  // a <- b
@@ -276,6 +276,23 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "L%d:\n", label_count++);  //true
         emit_code (ast, "\tpushl   $1\n");
         emit_code (ast, "L%d:\n", label_count++);
+    } else if (!strcmp (ast->ast_type, "AST_expression_unary")) {
+    	if (!strcmp (ast->child[0]->ast_type, "AST_unary_operator_deref")){
+    		if (is_exp_id_left == 0){  //右辺値
+    			codegen_exp (ast->child[1]);
+    			emit_code (ast, "\tpopl    %%eax\n");
+    			emit_code (ast, "\tmovl    0(%%eax), %%eax\n");
+    			emit_code (ast, "\tpushl   %%eax\n");
+    		} else {
+    			is_exp_id_left = 0;
+    			codegen_exp (ast->child[1]);
+    			is_exp_id_left = 1;
+    		}
+    	} else if (!strcmp (ast->ast_type, "AST_unary_operator_address")){
+    		is_exp_id_left = 1;
+    		codegen_exp (ast->child[1]);
+    		is_exp_id_left = 0;
+    	}
     } else {
         fprintf (stderr, "ast_type: %s\n", ast->ast_type);
         assert (0);
