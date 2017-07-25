@@ -200,6 +200,11 @@ codegen_exp (struct AST *ast)
     } else if (!strcmp (ast->ast_type, "AST_expression_add")) {
         codegen_exp (ast->child[0]); //push a
         codegen_exp (ast->child[1]); //push b
+        if (ast->child[0]->type->kind == TYPE_KIND_POINTER) {    //左辺値がポインタ
+        	emit_code (ast, "\tpopl    %%eax\n");
+        	emit_code (ast, "\timull   $4, %%eax\n");
+        	emit_code (ast, "\tpushl   %%eax\n");
+        }
         emit_code (ast, "\tpopl    %%ecx\n");
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\taddl    %%ecx, %%eax\n");
@@ -245,37 +250,41 @@ codegen_exp (struct AST *ast)
         emit_code (ast, "\tmovzbl  %%al, %%eax\n");
         emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_lor")) {
+    	int label_tmp = label_count;
+    	label_count += 3;
         codegen_exp (ast->child[0]);     //expression1
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tcmpl    $0, %%eax\n");
-        emit_code (ast, "\tjne     L%d\n", label_count);    //if 1(true) jmp true
+        emit_code (ast, "\tjne     L%d\n", label_tmp);    //if 1(true) jmp 0
         codegen_exp (ast->child[1]);     //expression2
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tcmpl    $0, %%eax\n");
-        emit_code (ast, "\tjne     L%d\n", label_count);    //if 1(true) jmp true
-        emit_code (ast, "\tjmp     L%d\n", label_count+1);  //else jmp false
-        emit_code (ast, "L%d:\n", label_count++);  //true
+        emit_code (ast, "\tjne     L%d\n", label_tmp);    //if 1(true) jmp 0
+        emit_code (ast, "\tjmp     L%d\n", label_tmp+1);  //else jmp 1
+        emit_code (ast, "L%d:\n", label_tmp);  //true 0
         emit_code (ast, "\tpushl   $1\n");
-        emit_code (ast, "\tjmp     L%d\n", label_count+1);
-        emit_code (ast, "L%d:\n", label_count++);  //false
+        emit_code (ast, "\tjmp     L%d\n", label_tmp+2);
+        emit_code (ast, "L%d:\n", label_tmp+1);  //false 1
         emit_code (ast, "\tpushl   $0\n");
-        emit_code (ast, "L%d:\n", label_count++);
+        emit_code (ast, "L%d:\n", label_tmp+2);
     } else if (!strcmp (ast->ast_type, "AST_expression_land")) {
+    	int label_tmp = label_count;
+    	label_count += 3;
         codegen_exp (ast->child[0]);     //expression1
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tcmpl    $0, %%eax\n");
-        emit_code (ast, "\tje      L%d\n", label_count);    //if 0(false) jmp false
+        emit_code (ast, "\tje      L%d\n", label_tmp);    //if 0(false) jmp false
         codegen_exp (ast->child[1]);     //expression2
         emit_code (ast, "\tpopl    %%eax\n");
         emit_code (ast, "\tcmpl    $0, %%eax\n");
-        emit_code (ast, "\tje      L%d\n", label_count);    //if 0(false) jmp true
-        emit_code (ast, "\tjmp     L%d\n", label_count+1);  //else jmp true
-        emit_code (ast, "L%d:\n", label_count++);  //false
+        emit_code (ast, "\tje      L%d\n", label_tmp);    //if 0(false) jmp true
+        emit_code (ast, "\tjmp     L%d\n", label_tmp+1);  //else jmp true
+        emit_code (ast, "L%d:\n", label_tmp);  //false
         emit_code (ast, "\tpushl   $0\n");
-        emit_code (ast, "\tjmp     L%d\n", label_count+1);
-        emit_code (ast, "L%d:\n", label_count++);  //true
+        emit_code (ast, "\tjmp     L%d\n", label_tmp+2);
+        emit_code (ast, "L%d:\n", label_tmp+1);  //true
         emit_code (ast, "\tpushl   $1\n");
-        emit_code (ast, "L%d:\n", label_count++);
+        emit_code (ast, "L%d:\n", label_tmp+2);
     } else if (!strcmp (ast->ast_type, "AST_expression_unary")) {
     	if (!strcmp (ast->child[0]->ast_type, "AST_unary_operator_deref")){
     		if (is_exp_id_left == 0){  //右辺値
@@ -320,31 +329,37 @@ codegen_stmt (struct AST *ast_stmt)
     } else if (.....) {  // 他の statement の場合のコードをここに追加する
  */
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_if")) {
+    	int label_tmp = label_count;
+    	label_count += 1;
         codegen_exp (ast_stmt->child[0]);     //expression
         emit_code (ast_stmt, "\tpopl    %%eax\n");
         emit_code (ast_stmt, "\tcmpl    $0, %%eax\n");
-        emit_code (ast_stmt, "\tje      L%d\n", label_count);
+        emit_code (ast_stmt, "\tje      L%d\n", label_tmp);
         codegen_stmt(ast_stmt->child[1]);     //statement
-        emit_code (ast_stmt, "L%d:\n", label_count++);
+        emit_code (ast_stmt, "L%d:\n", label_tmp);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_ifelse")) {
+    	int label_tmp = label_count;
+    	label_count += 2;
         codegen_exp (ast_stmt->child[0]);     //expression
         emit_code (ast_stmt, "\tpopl    %%eax\n");
         emit_code (ast_stmt, "\tcmpl    $0, %%eax\n");
-        emit_code (ast_stmt, "\tje      L%d\n", label_count);
+        emit_code (ast_stmt, "\tje      L%d\n", label_tmp);
         codegen_stmt (ast_stmt->child[1]);     //statement_1
-        emit_code (ast_stmt, "\tjmp     L%d\n", label_count+1);
-        emit_code (ast_stmt, "L%d:\n", label_count++);
+        emit_code (ast_stmt, "\tjmp     L%d\n", label_tmp+1);
+        emit_code (ast_stmt, "L%d:\n", label_tmp);
         codegen_stmt (ast_stmt->child[2]);     //statement_2
-        emit_code (ast_stmt, "L%d:\n", label_count++);
+        emit_code (ast_stmt, "L%d:\n", label_tmp+1);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_while")) {
-        emit_code (ast_stmt, "L%d:\n", label_count);
+    	int label_tmp = label_count;
+    	label_count += 2;
+        emit_code (ast_stmt, "L%d:\n", label_tmp);
         codegen_exp (ast_stmt->child[0]);      //expression
         emit_code (ast_stmt, "\tpopl    %%eax\n");
         emit_code (ast_stmt, "\tcmpl    $0, %%eax\n");
-        emit_code (ast_stmt, "\tje      L%d\n", (label_count+1));
+        emit_code (ast_stmt, "\tje      L%d\n", (label_tmp+1));
         codegen_stmt (ast_stmt->child[1]);     //statement
-        emit_code (ast_stmt, "\tjmp     L%d\n", label_count++);
-        emit_code (ast_stmt, "L%d:\n", label_count++);
+        emit_code (ast_stmt, "\tjmp     L%d\n", label_tmp);
+        emit_code (ast_stmt, "L%d:\n", label_tmp+1);
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_goto")) {
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_return")) {
         if (!strcmp (ast_stmt->child [0]->ast_type, "AST_expression_opt_single")) {
