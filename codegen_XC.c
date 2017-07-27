@@ -184,9 +184,6 @@ codegen_exp (struct AST *ast)
     } else if (   !strcmp (ast->ast_type, "AST_expression_funcall1")
                || !strcmp (ast->ast_type, "AST_expression_funcall2")) {
 	    codegen_exp_funcall (ast);
-/*
-    } else if (.....) {  // 他の expression の場合のコードをここに追加する
- */
     } else if (!strcmp (ast->ast_type, "AST_expression_assign")) {
         // a = b
         is_exp_id_left = 0;
@@ -306,8 +303,18 @@ codegen_exp (struct AST *ast)
     		is_exp_id_left = 1;
     		codegen_exp (ast->child[1]);
     		is_exp_id_left = 0;
-    	}
-
+    	} else if (!strcmp (ast->child[0]->ast_type, "AST_unary_operator_plus")){
+            codegen_exp (ast->child[1]);
+        } else if (!strcmp (ast->child[0]->ast_type, "AST_unary_operator_minus")){
+            codegen_exp (ast->child[1]);
+            emit_code (ast, "\tpopl    %%eax\n");
+            emit_code (ast, "\tneg     %%eax\n");
+            emit_code (ast, "\tpushl   %%eax\n");
+        } else if (!strcmp (ast->child[0]->ast_type, "AST_unary_operator_negative")){
+            codegen_exp (ast->child[1]);
+            emit_code (ast, "\tpopl    %%eax\n");
+            emit_code (ast, "\tnotl     %%eax\n");
+            emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_paren")) {
     	codegen_exp (ast->child[0]);
     } else {
@@ -330,9 +337,6 @@ codegen_stmt (struct AST *ast_stmt)
         }
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_comp")) {
 	codegen_block (ast_stmt->child [0]);
-/*
-    } else if (.....) {  // 他の statement の場合のコードをここに追加する
- */
     } else if (!strcmp (ast_stmt->ast_type, "AST_statement_if")) {
     	int label_tmp = label_count;
     	label_count += 1;
