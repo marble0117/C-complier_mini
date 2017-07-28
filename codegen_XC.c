@@ -315,6 +315,7 @@ codegen_exp (struct AST *ast)
             emit_code (ast, "\tpopl    %%eax\n");
             emit_code (ast, "\tnotl     %%eax\n");
             emit_code (ast, "\tpushl   %%eax\n");
+        }
     } else if (!strcmp (ast->ast_type, "AST_expression_paren")) {
     	codegen_exp (ast->child[0]);
     } else {
