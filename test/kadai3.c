@@ -8,7 +8,8 @@ int mod (int x, int y)
 {   return x - (x / y) * y; }
 
 void swap (int *a, int *b)
-{   int tmp; tmp = *a; *a = *b; *b = tmp; }
+{   
+    int tmp; tmp = *a; *a = *b; *b = tmp; }
 
 void bubble_sort(int *data, int size)
 {

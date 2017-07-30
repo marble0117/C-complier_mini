@@ -108,19 +108,31 @@ codegen_exp_id (struct AST *ast)
         // char型には非対応
         if(is_exp_id_left){
             emit_code (ast, "\tleal    %d(%%ebp), %%eax \t# %s, %d\n",
-                       offset, sym->name, sym->offset);
+                        offset, sym->name, sym->offset);
             emit_code (ast, "\tpushl   %%eax\n");
         }else{
-            emit_code (ast, "\tpushl   %d(%%ebp) \t# %s, %d\n",
-                       offset, sym->name, sym->offset);
+        	if (sym->type->u.t_prim.ptype == PRIM_TYPE_CHAR){
+        		emit_code (ast, "\tmovsbl  %d(%%ebp), %%eax \t# %s, %d\n",
+        			    offset, sym->name, sym->offset);
+        		emit_code (ast, "\tpushl   %%eax\n");
+        	} else {
+	            emit_code (ast, "\tpushl   %d(%%ebp) \t# %s, %d\n",
+	                       offset, sym->name, sym->offset);
+    		}
         }
+	        
     break;
     case NS_GLOBAL:
         // char型には非対応
         if (sym->type->kind == TYPE_KIND_FUNCTION || is_exp_id_left) {
             emit_code (ast, "\tpushl   $_%s\n", sym->name);
         } else {
-            emit_code (ast, "\tpushl   _%s\n", sym->name);
+        	if (sym->type->u.t_prim.ptype == PRIM_TYPE_CHAR){
+        		emit_code (ast, "\tmovsbl  _%s\n, %%eax\n", sym->name);
+        		emit_code (ast, "\tpushl   %%eax\n");
+        	} else {
+	            emit_code (ast, "\tpushl   _%s\n", sym->name);
+    		}
         }
     break;
     case NS_LABEL: /* falling through */

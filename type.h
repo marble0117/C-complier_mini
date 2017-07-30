@@ -22,7 +22,7 @@ struct Type {
     char            *id;     /* NULL if no identifier is associated */
     
     union {
-	struct { enum PrimType  ptype; } t_prim;
+        struct { enum PrimType  ptype; } t_prim;
     	struct { struct Type    *type; } t_pointer;
     	struct {
 	    struct Type *ret_type;
