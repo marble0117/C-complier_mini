@@ -217,7 +217,7 @@ codegen_exp (struct AST *ast)
         //char 未対応
         if (ast->child[0]->type->kind == TYPE_KIND_POINTER) {    //左辺値がポインタ
             emit_code (ast, "\tpopl    %%eax\n");
-            if (ast->child[0]->type.u.t_pointer.type.u.t_prim.ptype == PRIM_TYPE_INT){
+            if (ast->child[0]->type->u.t_pointer.type->u.t_prim.ptype == PRIM_TYPE_INT){
 	            emit_code (ast, "\timull   $4, %%eax\n");
             }
             emit_code (ast, "\tpushl   %%eax\n");
@@ -231,7 +231,9 @@ codegen_exp (struct AST *ast)
         codegen_exp (ast->child[1]); //push b
         if (ast->child[0]->type->kind == TYPE_KIND_POINTER) {    //左辺値がポインタ
             emit_code (ast, "\tpopl    %%eax\n");
-            emit_code (ast, "\timull   $%d, %%eax\n", ast->child[0]->type->size);
+            if (ast->child[0]->type->u.t_pointer.type->u.t_prim.ptype == PRIM_TYPE_INT){
+	            emit_code (ast, "\timull   $4, %%eax\n");
+            }
             emit_code (ast, "\tpushl   %%eax\n");
         }
         emit_code (ast, "\tpopl    %%ecx\n");
