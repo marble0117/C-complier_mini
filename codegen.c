@@ -105,7 +105,6 @@ codegen_exp_id (struct AST *ast)
         else
             assert (0);
 
-        // char型には非対応
         if(is_exp_id_left){
             emit_code (ast, "\tleal    %d(%%ebp), %%eax \t# %s, %d\n",
                         offset, sym->name, sym->offset);
@@ -123,12 +122,11 @@ codegen_exp_id (struct AST *ast)
 	        
     break;
     case NS_GLOBAL:
-        // char型には非対応
         if (sym->type->kind == TYPE_KIND_FUNCTION || is_exp_id_left) {
             emit_code (ast, "\tpushl   $_%s\n", sym->name);
         } else {
         	if (sym->type->u.t_prim.ptype == PRIM_TYPE_CHAR){
-        		emit_code (ast, "\tmovsbl  _%s\n, %%eax\n", sym->name);
+        		emit_code (ast, "\tmovsbl  _%s, %%eax\n", sym->name);
         		emit_code (ast, "\tpushl   %%eax\n");
         	} else {
 	            emit_code (ast, "\tpushl   _%s\n", sym->name);
@@ -216,9 +214,10 @@ codegen_exp (struct AST *ast)
     } else if (!strcmp (ast->ast_type, "AST_expression_add")) {
         codegen_exp (ast->child[0]); //push a
         codegen_exp (ast->child[1]); //push b
+        //char 未対応
         if (ast->child[0]->type->kind == TYPE_KIND_POINTER) {    //左辺値がポインタ
             emit_code (ast, "\tpopl    %%eax\n");
-            emit_code (ast, "\timull   $4, %%eax\n");
+            emit_code (ast, "\timull   $%d, %%eax\n", ast->child[0]->type->size);
             emit_code (ast, "\tpushl   %%eax\n");
         }
         emit_code (ast, "\tpopl    %%ecx\n");
@@ -230,7 +229,7 @@ codegen_exp (struct AST *ast)
         codegen_exp (ast->child[1]); //push b
         if (ast->child[0]->type->kind == TYPE_KIND_POINTER) {    //左辺値がポインタ
             emit_code (ast, "\tpopl    %%eax\n");
-            emit_code (ast, "\timull   $4, %%eax\n");
+            emit_code (ast, "\timull   $%d, %%eax\n", ast->child[0]->type->size);
             emit_code (ast, "\tpushl   %%eax\n");
         }
         emit_code (ast, "\tpopl    %%ecx\n");
