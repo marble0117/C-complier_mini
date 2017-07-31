@@ -187,8 +187,9 @@ codegen_exp (struct AST *ast)
     if (!strcmp (ast->ast_type, "AST_expression_int")) {
         emit_code (ast, "\tpushl   $%d\n", ast->u.int_val);
     } else if (!strcmp (ast->ast_type, "AST_expression_char")) {
-        emit_code (ast, "\tmovzbl  $%d\n, %%eax\n", ast->u.int_val);
-        emit_code (ast, "\tpushl   %%eax\n");
+        //emit_code (ast, "\tmovzbl  $%d\n, %%eax\n", ast->u.int_val);
+        //emit_code (ast, "\tpushl   %%eax\n");
+        emit_code (ast, "\tpushl   $%d\n", ast->u.int_val);
     } else if (!strcmp (ast->ast_type, "AST_expression_string")) {
         struct String *string = string_lookup (ast->u.id);
         assert (string != NULL);
@@ -208,7 +209,10 @@ codegen_exp (struct AST *ast)
         is_exp_id_left = 0;
         emit_code (ast, "\tpopl    %%eax\n");  // %eax <- a
         emit_code (ast, "\tmovl    0(%%esp), %%ecx\n");  // %ecx <- b
-        emit_code (ast, "\tmovl    %%ecx, 0(%%eax)\n");  // a <- b
+        if (ast->child[0]->type->u.t_prim.ptype == PRIM_TYPE_CHAR)
+        	emit_code (ast, "\tmovb    %%cl, 0(%%eax)\n");  // a <- b
+        else
+        	emit_code (ast, "\tmovl    %%ecx, 0(%%eax)\n");  // a <- b
     } else if (!strcmp (ast->ast_type, "AST_expression_add")) {
         codegen_exp (ast->child[0]); //push a
         codegen_exp (ast->child[1]); //push b
