@@ -186,6 +186,10 @@ codegen_exp (struct AST *ast)
 {
     if (!strcmp (ast->ast_type, "AST_expression_int")) {
         emit_code (ast, "\tpushl   $%d\n", ast->u.int_val);
+    } else if (!strcmp (ast->ast_type, "AST_expression_char")) {
+        emit_code (ast, "");
+        emit_code (ast, "\tmovzbl  \n");
+        emit_code (ast, "\tpushl   %%eax\n");
     } else if (!strcmp (ast->ast_type, "AST_expression_string")) {
         struct String *string = string_lookup (ast->u.id);
         assert (string != NULL);
